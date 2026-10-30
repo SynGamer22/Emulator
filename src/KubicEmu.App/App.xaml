@@ -1,0 +1,27 @@
+<Application x:Class="KubicEmu.App.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <SolidColorBrush x:Key="Surface" Color="#171923" />
+        <SolidColorBrush x:Key="Panel" Color="#202330" />
+        <SolidColorBrush x:Key="Accent" Color="#8B7CFF" />
+        <Style TargetType="Button">
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Background" Value="#34384A" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="14,9" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="#11131A" />
+            <Setter Property="Foreground" Value="#F3F4F8" />
+            <Setter Property="BorderBrush" Value="#3B3F50" />
+            <Setter Property="Padding" Value="8,6" />
+        </Style>
+        <Style TargetType="Label">
+            <Setter Property="Foreground" Value="#BFC3D0" />
+        </Style>
+    </Application.Resources>
+</Application>

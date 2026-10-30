@@ -1,0 +1,95 @@
+<Window x:Class="KubicEmu.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="KubicEmu" Height="760" Width="1080" MinHeight="620" MinWidth="850"
+        Background="{StaticResource Surface}" Foreground="#F3F4F8" FontFamily="Segoe UI" AllowDrop="True" Drop="Window_Drop">
+    <Grid Margin="26">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <DockPanel Grid.Row="0" Margin="0,0,0,22">
+            <StackPanel DockPanel.Dock="Left">
+                <TextBlock Text="KubicEmu" FontSize="26" FontWeight="Bold" />
+                <TextBlock Text="ANDROID VIRTUAL DEVICE" Foreground="#9298AA" FontSize="10" Margin="1,2,0,0" />
+            </StackPanel>
+            <TextBlock x:Name="StatusText" Text="Not running" Foreground="#BFC3D0" VerticalAlignment="Center" HorizontalAlignment="Right" />
+        </DockPanel>
+        <Border Grid.Row="1" Background="{StaticResource Panel}" Padding="16" Margin="0,0,0,16">
+            <DockPanel>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                    <Button x:Name="StartButton" Content="Start Android" Click="Start_Click" Background="#6558D9" />
+                    <Button x:Name="StopButton" Content="Stop" Click="Stop_Click" IsEnabled="False" />
+                    <Button Content="Restart" Click="Restart_Click" />
+                    <Button Content="Install APK" Click="Install_Click" />
+                    <Button Content="Screenshot" Click="Screenshot_Click" />
+                </StackPanel>
+                <TextBlock x:Name="BootStatus" Text="Configure an Android-x86 ISO and create a virtual disk to begin." Foreground="#AEB2C0" VerticalAlignment="Center" TextWrapping="Wrap" />
+            </DockPanel>
+        </Border>
+        <TabControl Grid.Row="2" Background="{StaticResource Surface}" Foreground="#F3F4F8" BorderThickness="0">
+            <TabItem Header="Device">
+                <Grid Margin="0,16,0,0">
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                    <Border Background="{StaticResource Panel}" Padding="18" Margin="0,0,0,14">
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <StackPanel><TextBlock Text="ANDROID IMAGE" Foreground="#9298AA" FontSize="10"/><TextBlock x:Name="ImageStatus" Text="Not selected" Margin="0,5,0,0"/></StackPanel>
+                            <StackPanel Grid.Column="1"><TextBlock Text="VIRTUAL DISK" Foreground="#9298AA" FontSize="10"/><TextBlock x:Name="DiskStatus" Text="Not created" Margin="0,5,0,0"/></StackPanel>
+                            <StackPanel Grid.Column="2"><TextBlock Text="ACCELERATION" Foreground="#9298AA" FontSize="10"/><TextBlock x:Name="AccelerationStatus" Text="WHPX" Margin="0,5,0,0"/></StackPanel>
+                        </Grid>
+                    </Border>
+                    <Border Grid.Row="1" Background="#101219" Padding="18">
+                        <DockPanel>
+                            <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,10" VerticalAlignment="Center">
+                                <TextBlock Text="Activity" Foreground="#BFC3D0" Margin="0,0,12,0" VerticalAlignment="Center" />
+                                <TextBox x:Name="PackageName" Width="180" ToolTip="Android package name" Margin="0,0,8,0" />
+                                <Button Content="Launch" Click="Launch_Click" />
+                                <Button Content="Uninstall" Click="Uninstall_Click" />
+                                <Button Content="Rotate" Click="Rotate_Click" />
+                                <Button Content="Vol +" Click="VolumeUp_Click" />
+                                <Button Content="Vol -" Click="VolumeDown_Click" />
+                            </WrapPanel>
+                            <TextBox x:Name="LogBox" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Background="#101219" BorderThickness="0" FontFamily="Cascadia Mono" FontSize="12" />
+                        </DockPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Settings">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,12,0,0">
+                    <Grid MaxWidth="760" HorizontalAlignment="Left">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="180"/><ColumnDefinition Width="460"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Label Content="Android-x86 ISO"/><TextBox x:Name="IsoPath" Grid.Column="1"/><Button Grid.Column="2" Content="Browse" Click="BrowseIso_Click"/>
+                        <Label Grid.Row="1" Content="Persistent disk"/><TextBox x:Name="DiskPath" Grid.Row="1" Grid.Column="1"/><Button Grid.Row="1" Grid.Column="2" Content="Browse" Click="BrowseDisk_Click"/>
+                        <Label Grid.Row="2" Content="QEMU executable"/><TextBox x:Name="QemuPath" Grid.Row="2" Grid.Column="1"/><Button Grid.Row="2" Grid.Column="2" Content="Browse" Click="BrowseQemu_Click"/>
+                        <Label Grid.Row="3" Content="qemu-img executable"/><TextBox x:Name="QemuImgPath" Grid.Row="3" Grid.Column="1"/><Button Grid.Row="3" Grid.Column="2" Content="Browse" Click="BrowseQemuImg_Click"/>
+                        <Label Grid.Row="4" Content="ADB executable"/><TextBox x:Name="AdbPath" Grid.Row="4" Grid.Column="1"/><Button Grid.Row="4" Grid.Column="2" Content="Browse" Click="BrowseAdb_Click"/>
+                        <Label Grid.Row="5" Content="Memory (MiB)"/><TextBox x:Name="Memory" Grid.Row="5" Grid.Column="1"/>
+                        <Label Grid.Row="6" Content="CPU cores"/><TextBox x:Name="CpuCores" Grid.Row="6" Grid.Column="1"/>
+                        <Label Grid.Row="7" Content="Disk size (GiB)"/><TextBox x:Name="DiskSize" Grid.Row="7" Grid.Column="1"/>
+                        <Label Grid.Row="8" Content="Resolution"/><StackPanel Grid.Row="8" Grid.Column="1" Orientation="Horizontal"><TextBox x:Name="ScreenWidth" Width="120"/><TextBlock Text=" x " VerticalAlignment="Center"/><TextBox x:Name="ScreenHeight" Width="120"/></StackPanel>
+                        <Label Grid.Row="9" Content="Density (DPI)"/><TextBox x:Name="Dpi" Grid.Row="9" Grid.Column="1"/>
+                        <Label Grid.Row="10" Content="Acceleration"/><ComboBox x:Name="Acceleration" Grid.Row="10" Grid.Column="1" Width="160" HorizontalAlignment="Left"><ComboBoxItem Content="WHPX"/><ComboBoxItem Content="TCG (software)"/></ComboBox>
+                        <StackPanel Grid.Row="11" Grid.Column="1" Orientation="Horizontal" Margin="0,16,0,0">
+                            <Button Content="Save settings" Click="Save_Click" Background="#6558D9"/>
+                            <Button Content="Create virtual disk" Click="CreateDisk_Click"/>
+                            <Button Content="Boot installer" Click="Installer_Click"/>
+                        </StackPanel>
+                        <Label Grid.Row="12" Content="Image download URL"/><TextBox x:Name="ImageDownloadUrl" Grid.Row="12" Grid.Column="1"/>
+                        <Label Grid.Row="13" Content="Image SHA-256"/><TextBox x:Name="ImageSha256" Grid.Row="13" Grid.Column="1"/>
+                        <StackPanel Grid.Row="14" Grid.Column="1" Orientation="Horizontal" Margin="0,14,0,20">
+                            <Button Content="Download and verify ISO" Click="DownloadImage_Click" Background="#6558D9"/>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>
