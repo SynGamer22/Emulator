@@ -12,6 +12,9 @@ public sealed class EmulatorController(IProcessRunner runner) : IAsyncDisposable
 
     public async Task CreateDiskAsync(EmulatorSettings settings, CancellationToken cancellationToken = default)
     {
+        var error = settings.Validate();
+        if (error.Length > 0) throw new ArgumentException(error, nameof(settings));
+        if (string.IsNullOrWhiteSpace(settings.DiskPath)) throw new ArgumentException("Choose a virtual disk path first.", nameof(settings));
         var diskPath = Path.GetFullPath(settings.DiskPath);
         if (File.Exists(diskPath)) throw new IOException("The virtual disk already exists; it was not overwritten.");
         Directory.CreateDirectory(Path.GetDirectoryName(diskPath)!);
@@ -26,9 +29,11 @@ public sealed class EmulatorController(IProcessRunner runner) : IAsyncDisposable
         if (IsRunning) return;
         var error = settings.Validate();
         if (error.Length > 0) throw new ArgumentException(error);
-        if (!File.Exists(settings.DiskPath) && bootFromInstaller)
+        if (!File.Exists(settings.DiskPath))
         {
-            if (!File.Exists(settings.AndroidIsoPath)) throw new FileNotFoundException("Select a valid Android-x86 installer ISO before creating the first virtual disk.", settings.AndroidIsoPath);
+            if (!File.Exists(settings.AndroidIsoPath))
+                throw new InvalidOperationException("No Android virtual disk exists yet. Select a valid Android-x86 installer ISO in Settings; KubicEmu will create a persistent disk and boot its installer.");
+            bootFromInstaller = true;
             await CreateDiskAsync(settings, cancellationToken);
         }
         var args = QemuCommandBuilder.Build(settings, bootFromInstaller);

@@ -22,13 +22,14 @@ Android-x86 is an independent community project, not Google's Android Emulator. 
 
 ## First Run
 
-1. Install QEMU for Windows and Android SDK Platform Tools. Enable **Windows Hypervisor Platform** in Windows Features and reboot if WHPX will be used.
-2. Launch KubicEmu and open **Settings**. Browse to the QEMU tools and `adb.exe` if they are not on `PATH`.
-3. To download an image within the app, enter its publisher-provided HTTPS URL and exact SHA-256 hash, then choose **Download and verify ISO**. Interrupted downloads retain a `.partial` file and resume when the server supports HTTP range requests. Existing final files are never overwritten.
-4. Alternatively browse to an ISO you already downloaded. Select the matching disk location and configure memory/CPU, then choose **Create virtual disk**. The disk is stored under `%LOCALAPPDATA%\KubicEmu` by default.
-5. Choose **Boot installer**. In the QEMU window, install Android-x86 onto the provided virtual disk. Do not select or format any host drive. Shut the VM down when installation finishes.
-6. Start Android without the installer ISO. Enable Android debugging and ensure `adbd` listens on TCP port 5555 inside the guest; the host connects through QEMU's localhost port forwarding. Android-x86 images differ in how this is enabled.
-7. Once boot is complete, use **Install APK**, drag an APK onto the app, or enter an installed package name to launch/uninstall it. Display size/DPI, screenshot, rotation, and volume actions are also available.
+1. Extract `KubicEmu-Setup-win-x64.zip` and run `KubicEmu.Setup.exe`. Keep `KubicEmu-win-x64.zip` beside it. Choose an install location; the setup screen reports package size and live expanded-byte progress. If `KubicEmu.exe` already exists there, setup offers an update. It updates files from the package and removes obsolete files only when tracked in its KubicEmu manifest; unrelated files and Android data remain untouched.
+2. Install QEMU for Windows and Android SDK Platform Tools. Enable **Windows Hypervisor Platform** in Windows Features and reboot if WHPX will be used.
+3. Launch KubicEmu and open **Settings**. Browse to the QEMU tools and `adb.exe` if they are not on `PATH`.
+4. To download an image within the app, enter its publisher-provided HTTPS URL and exact SHA-256 hash, then choose **Download and verify ISO**. Interrupted downloads retain a `.partial` file and resume when the server supports HTTP range requests. Existing final files are never overwritten.
+5. Alternatively browse to an ISO you already downloaded. Configure memory/CPU. On first start, KubicEmu creates its persistent disk under `%LOCALAPPDATA%\KubicEmu` by default and boots the installer automatically. If disk creation or QEMU startup fails, the next start continues to select installer mode while the disk is still absent.
+6. In the QEMU window, install Android-x86 onto the virtual disk. Do not select or format any host drive. Shut the VM down when installation finishes, then choose **Start Android** again.
+7. Enable Android debugging and ensure `adbd` listens on TCP port 5555 inside the guest; the host connects through QEMU's localhost port forwarding. Android-x86 images differ in how this is enabled.
+8. Once boot is complete, use **Install APK**, drag an APK onto the app, or enter an installed package name to launch/uninstall it. Display size/DPI, screenshot, rotation, and volume actions are also available.
 
 The first boot and Android installation are manual. The application does not currently provision an Android image automatically, install the guest OS unattended, or embed the QEMU display in its WPF window.
 
@@ -40,6 +41,7 @@ Requires the .NET 10 SDK. On Windows:
 dotnet restore KubicEmu.sln
 dotnet test KubicEmu.sln --configuration Release
 dotnet publish src/KubicEmu.App/KubicEmu.App.csproj --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -o artifacts/win-x64
+dotnet publish src/KubicEmu.Setup/KubicEmu.Setup.csproj --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -o artifacts/setup
 ```
 
 On Linux, cross-compilation of the WPF project is enabled with `EnableWindowsTargeting`; publish may need NuGet access to download the Windows Desktop and runtime packs:
@@ -49,5 +51,7 @@ dotnet test tests/KubicEmu.Tests/KubicEmu.Tests.csproj --configuration Release
 dotnet build src/KubicEmu.App/KubicEmu.App.csproj --configuration Release
 dotnet publish src/KubicEmu.App/KubicEmu.App.csproj --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -o artifacts/win-x64
 ```
+
+To produce the app ZIP and setup/update bundle from the repository root, run `bash scripts/build-release.sh`. It creates `artifacts/KubicEmu-win-x64.zip` and `artifacts/KubicEmu-Setup-win-x64.zip`. Extract the latter as a pair; the setup executable requires the app ZIP alongside it.
 
 The release output is not a standalone Android emulator package: QEMU, ADB, and the Android image remain separate prerequisites. The current Linux container has no QEMU or ADB installation and does not grant the build user access to `/dev/kvm`, so an Android VM integration test could not be run here. A booted-VM integration test must be run on a Windows machine with those dependencies and a compatible Android image; no successful Android boot is claimed.

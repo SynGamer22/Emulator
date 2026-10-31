@@ -80,21 +80,26 @@ public partial class MainWindow : Window
     {
         try
         {
-            await SaveSettingsAsync();
-            var firstLaunch = !File.Exists(_settings.DiskPath);
-            if (firstLaunch && !File.Exists(_settings.AndroidIsoPath))
-                throw new InvalidOperationException("No Android virtual disk exists yet. Select an Android-x86 ISO in Settings, then start Android to create a disk and launch its installer.");
-
-            await _controller.StartAsync(_settings, bootFromInstaller: firstLaunch);
-            if (firstLaunch)
-                BootStatus.Text = "A new persistent disk was created. Install Android-x86 from the QEMU window, then restart without the ISO.";
-            else
-            {
-                BootStatus.Text = "Android is starting. The QEMU window shows the virtual device.";
-                _ = MonitorBootAsync();
-            }
+            await StartDeviceAsync();
         }
         catch (Exception ex) { ShowError(ex); }
+    }
+
+    private async Task StartDeviceAsync()
+    {
+        await SaveSettingsAsync();
+        var firstLaunch = !File.Exists(_settings.DiskPath);
+        if (firstLaunch && !File.Exists(_settings.AndroidIsoPath))
+            throw new InvalidOperationException("No Android virtual disk exists yet. Select a valid Android-x86 ISO in Settings, then start Android to create a disk and launch its installer.");
+
+        await _controller.StartAsync(_settings, bootFromInstaller: firstLaunch);
+        if (firstLaunch)
+            BootStatus.Text = "A new persistent disk was created. Install Android-x86 from the QEMU window, then restart without the ISO.";
+        else
+        {
+            BootStatus.Text = "Android is starting. The QEMU window shows the virtual device.";
+            _ = MonitorBootAsync();
+        }
     }
 
     private async void Installer_Click(object sender, RoutedEventArgs e)
@@ -134,9 +139,7 @@ public partial class MainWindow : Window
         try
         {
             await _controller.StopAsync(_settings);
-            await _controller.StartAsync(_settings, bootFromInstaller: false);
-            BootStatus.Text = "Android restarting...";
-            _ = MonitorBootAsync();
+            await StartDeviceAsync();
         }
         catch (Exception ex) { ShowError(ex); }
     }

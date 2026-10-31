@@ -1,6 +1,6 @@
 using KubicEmu.Core;
+using System.IO.Compression;
 using System.Net;
-using System.Net.Http.Headers;
 using Xunit;
 
 namespace KubicEmu.Tests;
@@ -141,6 +141,74 @@ public sealed class EmulatorTests
             Assert.Empty(runner.Calls);
         }
         finally { File.Delete(disk); }
+    }
+
+    [Fact]
+    public async Task StartWithoutDiskOrInstaller_ExplainsFirstRunSetup()
+    {
+        var folder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        var settings = new EmulatorSettings { DiskPath = Path.Combine(folder, "android.qcow2") };
+        try
+        {
+            var error = await Assert.ThrowsAsync<InvalidOperationException>(() => new EmulatorController(new StubProcessRunner()).StartAsync(settings, false));
+            Assert.Contains("Select a valid Android-x86 installer ISO", error.Message);
+        }
+        finally { if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true); }
+    }
+
+    [Fact]
+    public async Task Installer_InstallsAndUpdatesOnlyManifestOwnedFiles()
+    {
+        var folder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        var installDirectory = Path.Combine(folder, "KubicEmu");
+        var firstPackage = Path.Combine(folder, "first.zip");
+        var secondPackage = Path.Combine(folder, "second.zip");
+        try
+        {
+            Directory.CreateDirectory(folder);
+            CreatePackage(firstPackage, ("KubicEmu.exe", "v1"), ("old-runtime.dll", "remove me"));
+            var service = new InstallPackageService();
+            await service.InstallOrUpdateAsync(firstPackage, installDirectory);
+            Assert.Equal("v1", await File.ReadAllTextAsync(Path.Combine(installDirectory, "KubicEmu.exe")));
+            Assert.True(InstallPackageService.GetPackageSizeMiB(firstPackage) > 0);
+
+            await File.WriteAllTextAsync(Path.Combine(installDirectory, "user-data.txt"), "preserve me");
+            CreatePackage(secondPackage, ("KubicEmu.exe", "v2"), ("new-runtime.dll", "new file"));
+            await service.InstallOrUpdateAsync(secondPackage, installDirectory);
+
+            Assert.Equal("v2", await File.ReadAllTextAsync(Path.Combine(installDirectory, "KubicEmu.exe")));
+            Assert.True(File.Exists(Path.Combine(installDirectory, "new-runtime.dll")));
+            Assert.False(File.Exists(Path.Combine(installDirectory, "old-runtime.dll")));
+            Assert.Equal("preserve me", await File.ReadAllTextAsync(Path.Combine(installDirectory, "user-data.txt")));
+        }
+        finally { if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true); }
+    }
+
+    [Fact]
+    public async Task Installer_RejectsZipPathTraversal()
+    {
+        var folder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        var package = Path.Combine(folder, "unsafe.zip");
+        var installDirectory = Path.Combine(folder, "KubicEmu");
+        try
+        {
+            Directory.CreateDirectory(folder);
+            CreatePackage(package, ("KubicEmu.exe", "app"), ("../escaped.txt", "outside"));
+            await Assert.ThrowsAsync<InvalidDataException>(() => new InstallPackageService().InstallOrUpdateAsync(package, installDirectory));
+            Assert.False(File.Exists(Path.Combine(folder, "escaped.txt")));
+        }
+        finally { if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true); }
+    }
+
+    private static void CreatePackage(string path, params (string Name, string Content)[] files)
+    {
+        using var archive = ZipFile.Open(path, ZipArchiveMode.Create);
+        foreach (var (name, content) in files)
+        {
+            var entry = archive.CreateEntry(name);
+            using var writer = new StreamWriter(entry.Open());
+            writer.Write(content);
+        }
     }
 
     private sealed class StubHttpHandler(Func<HttpRequestMessage, HttpResponseMessage> respond) : HttpMessageHandler
