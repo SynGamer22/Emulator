@@ -81,9 +81,18 @@ public partial class MainWindow : Window
         try
         {
             await SaveSettingsAsync();
-            await _controller.StartAsync(_settings, bootFromInstaller: false);
-            BootStatus.Text = "Android is starting. The QEMU window shows the virtual device.";
-            _ = MonitorBootAsync();
+            var firstLaunch = !File.Exists(_settings.DiskPath);
+            if (firstLaunch && !File.Exists(_settings.AndroidIsoPath))
+                throw new InvalidOperationException("No Android virtual disk exists yet. Select an Android-x86 ISO in Settings, then start Android to create a disk and launch its installer.");
+
+            await _controller.StartAsync(_settings, bootFromInstaller: firstLaunch);
+            if (firstLaunch)
+                BootStatus.Text = "A new persistent disk was created. Install Android-x86 from the QEMU window, then restart without the ISO.";
+            else
+            {
+                BootStatus.Text = "Android is starting. The QEMU window shows the virtual device.";
+                _ = MonitorBootAsync();
+            }
         }
         catch (Exception ex) { ShowError(ex); }
     }
@@ -93,7 +102,6 @@ public partial class MainWindow : Window
         try
         {
             await SaveSettingsAsync();
-            if (!File.Exists(_settings.DiskPath)) throw new FileNotFoundException("Create the virtual disk before booting the installer.", _settings.DiskPath);
             await _controller.StartAsync(_settings, bootFromInstaller: true);
             BootStatus.Text = "Install Android-x86 onto the virtual disk in the QEMU window. Reboot without the ISO when installation finishes.";
         }

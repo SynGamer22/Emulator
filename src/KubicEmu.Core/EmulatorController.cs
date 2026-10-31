@@ -26,6 +26,11 @@ public sealed class EmulatorController(IProcessRunner runner) : IAsyncDisposable
         if (IsRunning) return;
         var error = settings.Validate();
         if (error.Length > 0) throw new ArgumentException(error);
+        if (!File.Exists(settings.DiskPath) && bootFromInstaller)
+        {
+            if (!File.Exists(settings.AndroidIsoPath)) throw new FileNotFoundException("Select a valid Android-x86 installer ISO before creating the first virtual disk.", settings.AndroidIsoPath);
+            await CreateDiskAsync(settings, cancellationToken);
+        }
         var args = QemuCommandBuilder.Build(settings, bootFromInstaller);
         var startInfo = new ProcessStartInfo(settings.QemuPath) { UseShellExecute = false };
         foreach (var arg in args) startInfo.ArgumentList.Add(arg);
